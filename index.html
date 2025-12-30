@@ -2,13 +2,13 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <title>Casino Video Poker</title>
+    <title>皇家视频扑克</title>
     <style>
         /* === 赌场绿绒布背景 === */
         body {
             background: radial-gradient(circle at center, #358c35 0%, #003300 100%);
             color: white;
-            font-family: 'Helvetica Neue', Arial, sans-serif;
+            font-family: 'Microsoft YaHei', 'Helvetica Neue', Arial, sans-serif;
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -18,7 +18,7 @@
             overflow-x: hidden;
         }
 
-        /* === 黑金风格赔率表 === */
+        /* === 赔率表 === */
         .paytable {
             display: grid;
             grid-template-columns: 1fr 1fr;
@@ -57,8 +57,9 @@
         .game-area {
             display: flex;
             gap: 15px;
-            margin: 50px 0;
+            margin: 40px 0;
             perspective: 1000px;
+            min-height: 160px;
         }
 
         .card {
@@ -76,102 +77,145 @@
             cursor: pointer;
             position: relative;
             box-shadow: 2px 2px 10px rgba(0,0,0,0.4);
-            transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            transition: all 0.2s;
             border: 2px solid #ccc;
         }
         
-        .card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 10px 20px rgba(0,0,0,0.3);
-        }
-
+        /* 牌面颜色 */
         .card.red { color: #d00; }
         .card.black { color: #222; }
         .card.joker { color: #800080; }
 
-        /* === 弃牌样式 === */
+        /* 背面样式 */
+        .card.back {
+            background: repeating-linear-gradient(45deg, #cc0000, #cc0000 10px, #aa0000 10px, #aa0000 20px);
+            border: 2px solid white;
+            color: transparent;
+        }
+        .card.back::after { content: ''; } /* 隐藏文字 */
+
+        /* 弃牌样式 */
         .card.discard {
             transform: translateY(20px) scale(0.95);
             filter: brightness(0.6) sepia(0.2);
             border-color: #cc0000;
         }
         .card.discard::after {
-            content: "✘ 换牌";
+            content: "换掉";
             position: absolute;
-            top: 50%;
-            left: 50%;
+            top: 50%; left: 50%;
             transform: translate(-50%, -50%) rotate(-15deg);
             color: #fff;
             font-size: 18px;
             background: rgba(200, 0, 0, 0.9);
             padding: 5px 10px;
-            border: 2px solid white;
             border-radius: 4px;
             font-weight: bold;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.5);
         }
 
-        /* === 赌场氛围控制区 === */
+        /* === 控制区 === */
         .controls {
             text-align: center;
             background: rgba(0,0,0,0.3);
             padding: 20px;
             border-radius: 20px;
-            width: 100%;
+            width: 90%;
             max-width: 600px;
         }
 
         .status {
-            margin-bottom: 20px;
+            margin-bottom: 15px;
             font-size: 24px;
             color: #ffd700;
             text-shadow: 2px 2px 2px #000;
-            font-family: 'Courier New', Courier, monospace;
             font-weight: bold;
             min-height: 35px;
         }
 
+        /* 按钮通用样式 */
         button {
-            padding: 15px 50px;
-            font-size: 24px;
+            padding: 12px 30px;
+            font-size: 20px;
             color: white;
             font-weight: bold;
-            text-transform: uppercase;
-            letter-spacing: 2px;
-            cursor: pointer;
             border: none;
             border-radius: 50px;
             background: linear-gradient(to bottom, #ff4d4d 0%, #cc0000 100%);
-            box-shadow: 0 6px 0 #8b0000, 0 10px 10px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.4);
+            box-shadow: 0 5px 0 #8b0000, 0 8px 10px rgba(0,0,0,0.3);
+            cursor: pointer;
+            margin: 5px;
             transition: all 0.1s;
         }
-
         button:active {
-            transform: translateY(6px);
-            box-shadow: 0 0 0 #8b0000, inset 0 2px 5px rgba(0,0,0,0.5);
-            background: linear-gradient(to bottom, #cc0000 0%, #aa0000 100%);
+            transform: translateY(4px);
+            box-shadow: 0 1px 0 #8b0000;
         }
-
         button:disabled {
             background: #555;
             box-shadow: none;
             color: #aaa;
             cursor: not-allowed;
-            transform: translateY(6px);
+            transform: translateY(4px);
+        }
+
+        /* 蓝色按钮 (用于收钱/小功能) */
+        button.btn-blue {
+            background: linear-gradient(to bottom, #4d94ff 0%, #0052cc 100%);
+            box-shadow: 0 5px 0 #003380, 0 8px 10px rgba(0,0,0,0.3);
+        }
+        button.btn-blue:active { box-shadow: 0 1px 0 #003380; }
+
+        /* 绿色按钮 (用于赌博) */
+        button.btn-green {
+            background: linear-gradient(to bottom, #4dff88 0%, #009933 100%);
+            box-shadow: 0 5px 0 #006622, 0 8px 10px rgba(0,0,0,0.3);
+        }
+        button.btn-green:active { box-shadow: 0 1px 0 #006622; }
+
+        /* 下注控制条 */
+        .bet-control {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+            margin-bottom: 20px;
+            background: rgba(0,0,0,0.5);
+            padding: 10px;
+            border-radius: 10px;
+        }
+        .bet-display {
+            font-size: 22px;
+            color: #ffd700;
+            font-family: monospace;
+            width: 30px;
+        }
+        .btn-small {
+            padding: 5px 15px;
+            font-size: 18px;
+            border-radius: 5px;
         }
 
         .balance-box {
-            margin-top: 25px;
+            margin-top: 15px;
             display: inline-block;
             background: #000;
             border: 2px solid #555;
             padding: 10px 30px;
             border-radius: 5px;
-            font-family: 'Courier New', monospace;
+            font-family: monospace;
             color: #0f0;
             font-size: 20px;
-            box-shadow: inset 0 0 10px #000;
         }
+
+        /* 博弈覆盖层 */
+        .gamble-overlay {
+            display: none; /* 默认隐藏 */
+            flex-direction: column;
+            align-items: center;
+            animation: fadeIn 0.3s;
+        }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
     </style>
 </head>
 <body>
@@ -189,47 +233,258 @@
         <div id="row-pair"><span>高牌一对 (J/Q/K/A)</span><span>x1</span></div>
     </div>
 
-    <div class="game-area" id="card-container"></div>
+    <div class="game-area" id="card-container">
+        </div>
 
     <div class="controls">
-        <div class="status" id="status-text">PRESS DEAL TO START</div>
-        <button id="action-btn" onclick="handleAction()">DEAL</button>
+        <div class="status" id="status-text">请按发牌开始游戏</div>
+
+        <div id="main-controls">
+            <div class="bet-control" id="bet-panel">
+                <span style="color:white; font-weight:bold;">下注:</span>
+                <button class="btn-small" onclick="changeBet(-1)">-</button>
+                <span class="bet-display" id="bet-display">1</span>
+                <button class="btn-small" onclick="changeBet(1)">+</button>
+            </div>
+
+            <button id="action-btn" onclick="handleAction()">发 牌 (DEAL)</button>
+        </div>
+
+        <div id="gamble-controls" style="display: none;">
+            <p style="color: #ccc; font-size: 14px; margin: 0 0 10px 0;">猜下一张牌的大小 (3-8为小，9-鬼牌为大)</p>
+            <button class="btn-green" onclick="playGamble('BIG')">押 大 (9-鬼)</button>
+            <button class="btn-green" onclick="playGamble('SMALL')">押 小 (2-8)</button>
+            <div style="height: 10px;"></div>
+            <button class="btn-blue" onclick="collectWinnings()">收下金币 (放弃)</button>
+        </div>
+
+        <div id="win-decision-controls" style="display: none;">
+            <button class="btn-green" onclick="startGamble()">挑战双倍 (x2)</button>
+            <button class="btn-blue" onclick="collectWinnings()">收下金币</button>
+        </div>
+
         <br>
-        <div class="balance-box">CREDIT: $<span id="money">100</span></div>
+        <div class="balance-box">余额: <span id="money">100</span></div>
     </div>
 
 <script>
-    // === 音效加载 ===
-    // 确保你的目录下有 win.mp3 和 lose.mp3
+    // === 音频设置 ===
     const winSound = new Audio('win.mp3');
     const loseSound = new Audio('lose.mp3');
-    
-    // 预加载以防延迟
-    winSound.load();
-    loseSound.load();
+    winSound.load(); loseSound.load();
 
+    // === 常量与变量 ===
     const SUITS = ['♠', '♥', '♣', '♦'];
     const RANKS = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A'];
+    
     let deck = [];
     let hand = [];
-    let gameState = 'DEAL'; 
+    let gameState = 'DEAL'; // 状态: DEAL, DRAW, WIN_DECISION, GAMBLE
     let money = 100;
-    const BET = 1;
+    let currentBet = 1;
+    let pendingWin = 0; // 暂存的奖金（还没收下的）
 
+    // DOM 元素
     const cardContainer = document.getElementById('card-container');
     const actionBtn = document.getElementById('action-btn');
     const statusText = document.getElementById('status-text');
     const moneyDisplay = document.getElementById('money');
+    const betDisplay = document.getElementById('bet-display');
+    const betPanel = document.getElementById('bet-panel');
+    const mainControls = document.getElementById('main-controls');
+    const gambleControls = document.getElementById('gamble-controls');
+    const winDecisionControls = document.getElementById('win-decision-controls');
 
+    // === 初始化 ===
+    // 渲染5张背面牌
     for(let i=0; i<5; i++) {
         let div = document.createElement('div');
-        div.className = 'card';
+        div.className = 'card back';
         div.onclick = () => toggleDiscard(i);
-        div.style.background = 'repeating-linear-gradient(45deg, #cc0000, #cc0000 10px, #aa0000 10px, #aa0000 20px)';
-        div.style.border = '2px solid white';
+        cardContainer.appendChild(div);
+    }
+    updateUI();
+
+    // === 核心功能：调整下注 ===
+    function changeBet(amount) {
+        if (gameState !== 'DEAL') return; // 只能在发牌前改
+        let newBet = currentBet + amount;
+        if (newBet < 1) newBet = 1;
+        if (newBet > 10) newBet = 10;
+        currentBet = newBet;
+        betDisplay.innerText = currentBet;
+    }
+
+    // === 核心逻辑：主按钮 ===
+    function handleAction() {
+        if (gameState === 'DEAL') {
+            // 开始新一局
+            if (money < currentBet) {
+                if(confirm("余额不足！是否重置为 100 筹码？")) money = 100;
+                else return;
+            }
+            money -= currentBet;
+            updateUI();
+            
+            deck = shuffle(createDeck());
+            hand = [];
+            for(let i=0; i<5; i++) hand.push({ ...deck.pop(), isDiscard: false });
+            
+            gameState = 'DRAW';
+            actionBtn.innerText = "确认换牌";
+            statusText.innerText = "请点击不想要的牌 (换掉)";
+            clearHighlights();
+            renderHand();
+            // 锁定下注
+            betPanel.style.opacity = '0.5';
+            betPanel.style.pointerEvents = 'none';
+
+        } else if (gameState === 'DRAW') {
+            // 换牌阶段
+            // 1. 正常换牌
+            for(let i=0; i<5; i++) {
+                if (hand[i].isDiscard) hand[i] = { ...deck.pop(), isDiscard: false };
+            }
+
+            // 2. 幸运机制 (5% 概率强制顺子，仅供娱乐)
+            let hasJoker = hand.some(c => c.isJoker);
+            if (!hasJoker && Math.random() < 0.05) { 
+                hand = generateForcedStraight();
+            }
+            
+            renderHand();
+            
+            // 3. 结算
+            let winMultiplier = evaluateHand(); // 返回倍率
+            
+            if (winMultiplier > 0) {
+                // 赢了！进入决策阶段
+                pendingWin = winMultiplier * currentBet;
+                gameState = 'WIN_DECISION';
+                statusText.innerText = `赢了 ${pendingWin} 金币！要挑战双倍吗？`;
+                
+                // 播放胜利音效
+                winSound.currentTime = 0; winSound.play().catch(()=>{});
+
+                // 切换按钮显示
+                mainControls.style.display = 'none';
+                winDecisionControls.style.display = 'block';
+            } else {
+                // 输了
+                statusText.innerText = "未中奖，请再接再厉";
+                loseSound.currentTime = 0; loseSound.play().catch(()=>{});
+                resetGame();
+            }
+        }
+    }
+
+    // === 游戏重置 (回到发牌前) ===
+    function resetGame() {
+        gameState = 'DEAL';
+        actionBtn.innerText = "发 牌 (DEAL)";
+        mainControls.style.display = 'block';
+        winDecisionControls.style.display = 'none';
+        gambleControls.style.display = 'none';
+        
+        // 解锁下注
+        betPanel.style.opacity = '1';
+        betPanel.style.pointerEvents = 'auto';
+        updateUI();
+    }
+
+    // === 双倍博弈逻辑 ===
+    
+    // 1. 玩家选择挑战
+    function startGamble() {
+        gameState = 'GAMBLE';
+        winDecisionControls.style.display = 'none';
+        gambleControls.style.display = 'block';
+        statusText.innerText = `当前奖金: ${pendingWin}。猜下一张牌是 大 还是 小？`;
+
+        // 清空桌面，只显示一张背面牌
+        cardContainer.innerHTML = '';
+        let div = document.createElement('div');
+        div.className = 'card back';
+        div.id = 'gamble-card';
         cardContainer.appendChild(div);
     }
 
+    // 2. 玩家选择收钱
+    function collectWinnings() {
+        money += pendingWin;
+        pendingWin = 0;
+        statusText.innerText = "金币已收入囊中！";
+        // 恢复5张牌的空位
+        cardContainer.innerHTML = '';
+        for(let i=0; i<5; i++) {
+            let div = document.createElement('div');
+            div.className = 'card back';
+            div.onclick = () => toggleDiscard(i); // 重新绑定事件
+            cardContainer.appendChild(div);
+        }
+        resetGame();
+    }
+
+    // 3. 执行猜大小
+    function playGamble(choice) {
+        // 重新洗一副牌（保证概率公平）
+        let gambleDeck = shuffle(createDeck());
+        let card = gambleDeck.pop();
+        
+        // 显示这张牌
+        let div = document.getElementById('gamble-card');
+        renderSingleCard(div, card);
+
+        // 判断大小 (2-8 小, 9-A-Joker 大)
+        // 我们的 val: 2=2...8=8, 9=9...A=14, Joker=99
+        let isBig = card.val >= 9;
+        let isSmall = card.val <= 8;
+
+        let won = false;
+        if (choice === 'BIG' && isBig) won = true;
+        if (choice === 'SMALL' && isSmall) won = true;
+
+        if (won) {
+            pendingWin *= 2;
+            statusText.innerText = `猜对了！奖金翻倍为 ${pendingWin}！继续吗？`;
+            winSound.currentTime = 0; winSound.play().catch(()=>{});
+            // 按钮保持不变，可以继续猜
+        } else {
+            pendingWin = 0;
+            statusText.innerText = `猜错了... 奖金归零。`;
+            loseSound.currentTime = 0; loseSound.play().catch(()=>{});
+            
+            // 延迟一点时间后强制结束
+            setTimeout(() => {
+                // 恢复5张空牌
+                cardContainer.innerHTML = '';
+                for(let i=0; i<5; i++) {
+                    let d = document.createElement('div');
+                    d.className = 'card back';
+                    d.onclick = () => toggleDiscard(i);
+                    cardContainer.appendChild(d);
+                }
+                resetGame();
+            }, 2000);
+            
+            gambleControls.style.display = 'none'; // 防止连点
+        }
+    }
+
+    // === 辅助渲染函数 ===
+    function renderSingleCard(div, card) {
+        div.className = 'card'; // 移除 back 类
+        if (card.isJoker) {
+            div.innerHTML = "🤡<br><small>鬼牌</small>";
+            div.classList.add('joker');
+        } else {
+            div.innerHTML = `${card.rank}<br>${card.suit}`;
+            if (card.suit === '♥' || card.suit === '♦') div.classList.add('red');
+            else div.classList.add('black');
+        }
+    }
+
+    // === 基础扑克逻辑 ===
     function createDeck() {
         let d = [];
         for (let s of SUITS) {
@@ -249,58 +504,6 @@
         return d;
     }
 
-    function handleAction() {
-        if (gameState === 'DEAL') {
-            if (money <= 0) {
-                if(confirm("破产了！要补充 100 筹码继续玩吗？")) {
-                    money = 100;
-                } else {
-                    return;
-                }
-            }
-            if (money < BET) return;
-
-            money -= BET;
-            updateUI();
-            
-            deck = shuffle(createDeck());
-            hand = [];
-            for(let i=0; i<5; i++) {
-                hand.push({ ...deck.pop(), isDiscard: false });
-            }
-            
-            gameState = 'DRAW';
-            actionBtn.innerText = "DRAW";
-            statusText.innerText = "SELECT DISCARDS";
-            clearHighlights();
-            renderHand();
-        } 
-        else if (gameState === 'DRAW') {
-            // 1. 先正常换牌
-            for(let i=0; i<5; i++) {
-                if (hand[i].isDiscard) {
-                    hand[i] = { ...deck.pop(), isDiscard: false };
-                }
-            }
-            
-            // === 2. 幸运机制介入 (人为提高概率) ===
-            // 设定 5% 的概率 (0.05) 触发“天降顺子”
-            // 只有当玩家没有鬼牌的时候才触发（避免破坏本来可能更好的牌）
-            let hasJoker = hand.some(c => c.isJoker);
-            if (!hasJoker && Math.random() < 0.05) { 
-                console.log("幸运机制触发！强行发顺子！");
-                hand = generateForcedStraight();
-            }
-            
-            // 3. 渲染和结算
-            renderHand();
-            evaluateHand(); 
-            
-            gameState = 'DEAL';
-            actionBtn.innerText = "DEAL";
-        }
-    }
-
     function toggleDiscard(index) {
         if (gameState !== 'DRAW') return;
         hand[index].isDiscard = !hand[index].isDiscard;
@@ -308,31 +511,39 @@
     }
 
     function renderHand() {
-        const divs = cardContainer.children;
+        cardContainer.innerHTML = ''; // 清空
         for(let i=0; i<5; i++) {
-            const card = hand[i];
-            const div = divs[i];
+            let div = document.createElement('div');
+            let card = hand[i];
             
-            div.style.background = 'linear-gradient(135deg, #fff 0%, #f0f0f0 100%)';
-            div.style.border = '2px solid #ccc';
-            div.className = `card ${card.isDiscard ? 'discard' : ''}`;
-            
-            if (card.isJoker) {
-                div.innerHTML = "🤡<br><small>JOKER</small>";
-                div.classList.add('joker');
-                div.classList.remove('red', 'black');
-            } else {
-                div.innerHTML = `${card.rank}<br>${card.suit}`;
-                if (card.suit === '♥' || card.suit === '♦') {
-                    div.classList.add('red');
-                    div.classList.remove('black', 'joker');
-                } else {
-                    div.classList.add('black');
-                    div.classList.remove('red', 'joker');
-                }
-            }
+            div.onclick = () => toggleDiscard(i);
+            renderSingleCard(div, card); // 复用渲染逻辑
+
+            if (card.isDiscard) div.classList.add('discard');
+            cardContainer.appendChild(div);
         }
         updateUI();
+    }
+
+    function generateForcedStraight() {
+        let startVal = Math.floor(Math.random() * 9) + 2; 
+        let newHand = [];
+        for (let i = 0; i < 5; i++) {
+            let val = startVal + i;
+            let rankStr = '';
+            if (val <= 10) rankStr = val.toString();
+            else if (val === 11) rankStr = 'J';
+            else if (val === 12) rankStr = 'Q';
+            else if (val === 13) rankStr = 'K';
+            else if (val === 14) rankStr = 'A';
+            let suit = SUITS[i % 4]; 
+            newHand.push({ suit: suit, rank: rankStr, val: val, isJoker: false, isDiscard: false });
+        }
+        if (Math.random() < 0.2) {
+            let replaceIdx = Math.floor(Math.random() * 5);
+            newHand[replaceIdx] = { suit: 'JOKER', rank: 'JOKER', val: 99, isJoker: true, isDiscard: false };
+        }
+        return newHand;
     }
 
     function updateUI() {
@@ -343,6 +554,7 @@
         document.querySelectorAll('.paytable div').forEach(el => el.classList.remove('highlight'));
     }
 
+    // === 结算算法 (返回倍率) ===
     function evaluateHand() {
         let jokers = hand.filter(c => c.isJoker).length;
         let normalCards = hand.filter(c => !c.isJoker);
@@ -368,91 +580,28 @@
             if (royalCards.length + jokers >= 5) isRoyal = true;
         }
 
-        let win = 0;
-        let msg = "GAME OVER";
+        let multiplier = 0;
         let highlightId = "";
 
-        // === 结算逻辑 ===
-        if (isRoyal) { win = 100; msg = "ROYAL FLUSH!!"; highlightId = "row-royal"; }
-        else if ((maxCount + jokers) >= 5) { win = 50; msg = "FIVE OF A KIND!"; highlightId = "row-five"; }
-        else if (isFlush && isStraight) { win = 20; msg = "STRAIGHT FLUSH"; highlightId = "row-strflush"; }
-        else if ((maxCount + jokers) === 4) { win = 10; msg = "FOUR OF A KIND"; highlightId = "row-four"; }
-        else if (checkFullHouse(counts, jokers)) { win = 5; msg = "FULL HOUSE"; highlightId = "row-full"; }
-        else if (isFlush) { win = 4; msg = "FLUSH"; highlightId = "row-flush"; }
-        else if (isStraight) { win = 3; msg = "STRAIGHT"; highlightId = "row-straight"; }
-        else if ((maxCount + jokers) === 3) { win = 1; msg = "THREE OF A KIND"; highlightId = "row-three"; }
-        else if (checkTwoPair(counts, jokers)) { win = 1; msg = "TWO PAIR"; highlightId = "row-twopair"; }
-            // === 新增：强制生成一个顺子 ===
-        function generateForcedStraight() {
-            // 随机选择顺子的起始点 (2 到 10)
-            // 2=2 ... 10=10 (注意：我们的val逻辑里 2是val 2, 10是val 10)
-            // 比如随机到 6，那么顺子就是 6,7,8,9,10
-            let startVal = Math.floor(Math.random() * 9) + 2; 
-            let newHand = [];
-            for (let i = 0; i < 5; i++) {
-                let val = startVal + i;
-                // 简单的把 val 转回 rank 字符
-                let rankStr = '';
-                if (val <= 10) rankStr = val.toString();
-                else if (val === 11) rankStr = 'J';
-                else if (val === 12) rankStr = 'Q';
-                else if (val === 13) rankStr = 'K';
-                else if (val === 14) rankStr = 'A';
-    
-                // 随机给个花色，确保不全是同一种（避免变成同花顺，虽然那样玩家更爽）
-                // 简单的技巧：让花色跟着位置变，比如 ♠, ♥, ♣, ♦, ♠ 
-                let suit = SUITS[i % 4]; 
-    
-                newHand.push({
-                    suit: suit,
-                    rank: rankStr,
-                    val: val,
-                    isJoker: false,
-                    isDiscard: false
-                }); 
-            }
-            // 20% 的几率把其中一张换成鬼牌，增加真实感
-            if (Math.random() < 0.2) {
-                let replaceIdx = Math.floor(Math.random() * 5);
-                newHand[replaceIdx] = { suit: 'JOKER', rank: 'JOKER', val: 99, isJoker: true, isDiscard: false };
-            }
+        if (isRoyal) { multiplier = 100; highlightId = "row-royal"; }
+        else if ((maxCount + jokers) >= 5) { multiplier = 50; highlightId = "row-five"; }
+        else if (isFlush && isStraight) { multiplier = 20; highlightId = "row-strflush"; }
+        else if ((maxCount + jokers) === 4) { multiplier = 10; highlightId = "row-four"; }
+        else if (checkFullHouse(counts, jokers)) { multiplier = 5; highlightId = "row-full"; }
+        else if (isFlush) { multiplier = 4; highlightId = "row-flush"; }
+        else if (isStraight) { multiplier = 3; highlightId = "row-straight"; }
+        else if ((maxCount + jokers) === 3) { multiplier = 1; highlightId = "row-three"; }
+        else if (checkTwoPair(counts, jokers)) { multiplier = 1; highlightId = "row-twopair"; }
+        else if (checkHighPair(counts, jokers)) { multiplier = 1; highlightId = "row-pair"; }
 
-            return newHand;
-        }
-        
-        // === 高牌一对检测 (Jacks or Better) ===
-        else if (checkHighPair(counts, jokers)) {
-            win = 1; msg = "JACKS OR BETTER"; highlightId = "row-pair";
-        }
-
-        if (win > 0) {
-            money += win * BET;
-            statusText.innerText = `${msg} WIN ${win}!`;
-            if(highlightId) document.getElementById(highlightId).classList.add('highlight');
-            
-            // === 播放胜利音效 ===
-            // 重置播放进度，确保连赢时能重新播放
-            winSound.currentTime = 0;
-            winSound.play().catch(e => console.log("音效播放失败:", e));
-        } else {
-            statusText.innerText = msg;
-            
-            // === 播放失败音效 ===
-            loseSound.currentTime = 0;
-            loseSound.play().catch(e => console.log("音效播放失败:", e));
-        }
-        updateUI();
+        if (highlightId) document.getElementById(highlightId).classList.add('highlight');
+        return multiplier;
     }
 
     function checkHighPair(counts, jokers) {
-        // 如果有鬼牌但没成三条以上，说明这手牌很烂，直接判输
         if (jokers > 0) return false;
-
-        // 检查 J(11), Q(12), K(13), A(14) 的对子
         for (let val in counts) {
-            if (counts[val] >= 2 && parseInt(val) >= 11) {
-                return true;
-            }
+            if (counts[val] >= 2 && parseInt(val) >= 11) return true;
         }
         return false;
     }
