@@ -2,10 +2,10 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <title>视频扑克 (Joker Poker)</title>
+    <title>视频扑克 (弃牌模式)</title>
     <style>
         body {
-            background-color: #2c0e0e; /* 深红褐色背景，模仿你的截图 */
+            background-color: #2c0e0e; 
             color: white;
             font-family: 'Arial', sans-serif;
             display: flex;
@@ -16,7 +16,7 @@
             user-select: none;
         }
 
-        /* 赔率表样式 */
+        /* 赔率表样式 (保持不变) */
         .paytable {
             display: grid;
             grid-template-columns: 1fr 1fr;
@@ -62,27 +62,31 @@
             cursor: pointer;
             position: relative;
             border: 4px solid transparent;
-            transition: transform 0.1s;
+            transition: transform 0.2s, opacity 0.2s; /* 增加一点透明度过渡 */
         }
         
         .card.red { color: #d00; }
         .card.black { color: #000; }
         .card.joker { color: purple; }
 
-        /* 选中保留样式 */
-        .card.held {
-            border-color: #ffd700;
-            transform: translateY(-15px);
-            box-shadow: 0 0 15px rgba(255, 215, 0, 0.5);
+        /* === 修改核心：弃牌样式 === */
+        /* 选中要换掉的牌：边框变红，位置下沉，变暗 */
+        .card.discard {
+            border-color: #ff4444;
+            transform: translateY(15px); /* 向下沉，感觉是要丢弃 */
+            opacity: 0.7; /* 变暗一点 */
+            background-color: #ddd;
         }
-        .card.held::after {
-            content: "保留";
+        .card.discard::after {
+            content: "换掉"; /* 文字提示 */
             position: absolute;
-            bottom: -25px;
-            color: #ffd700;
+            top: -25px; /* 显示在上面，以免遮挡牌面 */
+            color: white;
             font-size: 14px;
-            background: #000;
-            padding: 2px 5px;
+            background: #ff4444;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-weight: bold;
         }
 
         /* 按钮和信息区域 */
@@ -126,16 +130,12 @@
     <div class="paytable" id="paytable">
         <div id="row-royal"><span>皇家同花顺</span><span>x100</span></div>
         <div id="row-flush"><span>同花</span><span>x4</span></div>
-        
         <div id="row-five"><span>五条 (带鬼牌)</span><span>x50</span></div>
         <div id="row-straight"><span>顺子</span><span>x3</span></div>
-        
         <div id="row-strflush"><span>同花顺</span><span>x20</span></div>
         <div id="row-three"><span>三条</span><span>x1</span></div>
-        
         <div id="row-four"><span>四条</span><span>x10</span></div>
         <div id="row-twopair"><span>两对</span><span>x1</span></div>
-        
         <div id="row-full"><span>葫芦</span><span>x5</span></div>
         <div id="row-pair"><span>一对·散牌</span><span>x0</span></div>
     </div>
@@ -153,24 +153,21 @@
     // === 游戏配置 ===
     const SUITS = ['♠', '♥', '♣', '♦'];
     const RANKS = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A'];
-    // 包含鬼牌
     let deck = [];
     let hand = [];
-    let gameState = 'DEAL'; // DEAL (还没发牌) -> DRAW (选牌阶段)
+    let gameState = 'DEAL'; 
     let money = 100;
-    const BET = 1; // 每次下注额
+    const BET = 1;
 
-    // === 初始化 ===
     const cardContainer = document.getElementById('card-container');
     const actionBtn = document.getElementById('action-btn');
     const statusText = document.getElementById('status-text');
     const moneyDisplay = document.getElementById('money');
 
-    // 生成5个空的卡牌槽
     for(let i=0; i<5; i++) {
         let div = document.createElement('div');
         div.className = 'card';
-        div.onclick = () => toggleHold(i);
+        div.onclick = () => toggleDiscard(i); // 修改了点击事件名
         div.innerHTML = '?';
         cardContainer.appendChild(div);
     }
@@ -181,11 +178,11 @@
         let d = [];
         for (let s of SUITS) {
             for (let r of RANKS) {
-                d.push({ suit: s, rank: r, val: RANKS.indexOf(r) + 2, isJoker: false });
+                // 修改：这里初始化 isDiscard 为 false
+                d.push({ suit: s, rank: r, val: RANKS.indexOf(r) + 2, isJoker: false, isDiscard: false });
             }
         }
-        // 加入一张鬼牌
-        d.push({ suit: 'JOKER', rank: 'JOKER', val: 99, isJoker: true });
+        d.push({ suit: 'JOKER', rank: 'JOKER', val: 99, isJoker: true, isDiscard: false });
         return d;
     }
 
@@ -199,7 +196,6 @@
 
     function handleAction() {
         if (gameState === 'DEAL') {
-            // 下注
             if (money < BET) {
                 alert("余额不足！");
                 return;
@@ -207,38 +203,39 @@
             money -= BET;
             updateUI();
             
-            // 洗牌发牌
             deck = shuffle(createDeck());
             hand = [];
             for(let i=0; i<5; i++) {
-                hand.push({ ...deck.pop(), held: false });
+                // 默认所有牌都不丢弃
+                hand.push({ ...deck.pop(), isDiscard: false });
             }
             
             gameState = 'DRAW';
-            actionBtn.innerText = "换牌 (Draw)";
-            statusText.innerText = "请选择要保留的牌...";
+            actionBtn.innerText = "确认换牌 (Draw)";
+            statusText.innerText = "点击你不想要的牌..."; // 提示语变了
             clearHighlights();
             renderHand();
         } 
         else if (gameState === 'DRAW') {
-            // 换牌逻辑
+            // === 修改：只替换被标记为 isDiscard 的牌 ===
             for(let i=0; i<5; i++) {
-                if (!hand[i].held) {
-                    hand[i] = { ...deck.pop(), held: false };
+                if (hand[i].isDiscard) {
+                    hand[i] = { ...deck.pop(), isDiscard: false };
                 }
             }
             
             renderHand();
-            evaluateHand(); // 结算
+            evaluateHand(); 
             
             gameState = 'DEAL';
             actionBtn.innerText = "再次发牌 (Deal)";
         }
     }
 
-    function toggleHold(index) {
+    // === 修改：切换弃牌状态 ===
+    function toggleDiscard(index) {
         if (gameState !== 'DRAW') return;
-        hand[index].held = !hand[index].held;
+        hand[index].isDiscard = !hand[index].isDiscard;
         renderHand();
     }
 
@@ -248,7 +245,8 @@
             const card = hand[i];
             const div = divs[i];
             
-            div.className = `card ${card.held ? 'held' : ''}`;
+            // === 修改：检查 isDiscard ===
+            div.className = `card ${card.isDiscard ? 'discard' : ''}`;
             
             if (card.isJoker) {
                 div.innerHTML = "🤡<br><small>JOKER</small>";
@@ -275,12 +273,10 @@
         document.querySelectorAll('.paytable div').forEach(el => el.classList.remove('highlight'));
     }
 
-    // === 牌型判断算法 (简化版) ===
+    // === 算法部分保持不变 ===
     function evaluateHand() {
         let jokers = hand.filter(c => c.isJoker).length;
         let normalCards = hand.filter(c => !c.isJoker);
-        
-        // 统计点数和花色
         let counts = {};
         let suits = {};
         normalCards.forEach(c => {
@@ -288,48 +284,33 @@
             suits[c.suit] = (suits[c.suit] || 0) + 1;
         });
 
-        let maxCount = 0; // 最多的同点数张数
+        let maxCount = 0; 
         for(let k in counts) maxCount = Math.max(maxCount, counts[k]);
-        
-        let maxSuit = 0; // 最多的同花色张数
+        let maxSuit = 0; 
         for(let k in suits) maxSuit = Math.max(maxSuit, suits[k]);
 
-        // 判断顺子 (比较复杂，这里用简化逻辑：排序后检查间隔)
         let isStraight = checkStraight(normalCards, jokers);
-        
         let isFlush = (maxSuit + jokers) >= 5;
         let isRoyal = false;
 
-        // 皇家同花顺特判 (10, J, Q, K, A)
         if (isFlush && isStraight) {
             let royalCards = normalCards.filter(c => c.val >= 10);
             if (royalCards.length + jokers >= 5) isRoyal = true;
         }
 
-        // === 结算判定顺序 (从大到小) ===
         let win = 0;
         let msg = "未中奖";
         let highlightId = "";
 
-        if (isRoyal) {
-            win = 100; msg = "皇家同花顺!"; highlightId = "row-royal";
-        } else if ((maxCount + jokers) >= 5) {
-            win = 50; msg = "五条!"; highlightId = "row-five";
-        } else if (isFlush && isStraight) {
-            win = 20; msg = "同花顺!"; highlightId = "row-strflush";
-        } else if ((maxCount + jokers) === 4) {
-            win = 10; msg = "四条!"; highlightId = "row-four";
-        } else if (checkFullHouse(counts, jokers)) {
-            win = 5; msg = "葫芦!"; highlightId = "row-full";
-        } else if (isFlush) {
-            win = 4; msg = "同花!"; highlightId = "row-flush";
-        } else if (isStraight) {
-            win = 3; msg = "顺子!"; highlightId = "row-straight";
-        } else if ((maxCount + jokers) === 3) {
-            win = 1; msg = "三条!"; highlightId = "row-three";
-        } else if (checkTwoPair(counts, jokers)) {
-            win = 1; msg = "两对!"; highlightId = "row-twopair";
-        }
+        if (isRoyal) { win = 100; msg = "皇家同花顺!"; highlightId = "row-royal"; }
+        else if ((maxCount + jokers) >= 5) { win = 50; msg = "五条!"; highlightId = "row-five"; }
+        else if (isFlush && isStraight) { win = 20; msg = "同花顺!"; highlightId = "row-strflush"; }
+        else if ((maxCount + jokers) === 4) { win = 10; msg = "四条!"; highlightId = "row-four"; }
+        else if (checkFullHouse(counts, jokers)) { win = 5; msg = "葫芦!"; highlightId = "row-full"; }
+        else if (isFlush) { win = 4; msg = "同花!"; highlightId = "row-flush"; }
+        else if (isStraight) { win = 3; msg = "顺子!"; highlightId = "row-straight"; }
+        else if ((maxCount + jokers) === 3) { win = 1; msg = "三条!"; highlightId = "row-three"; }
+        else if (checkTwoPair(counts, jokers)) { win = 1; msg = "两对!"; highlightId = "row-twopair"; }
 
         if (win > 0) {
             money += win * BET;
@@ -341,46 +322,29 @@
         updateUI();
     }
 
-    // 辅助函数：检查顺子 (允许跳过的位置由鬼牌填补)
     function checkStraight(cards, jokerCount) {
-        if (cards.length === 0) return true; // 全是鬼牌
+        if (cards.length === 0) return true;
         let vals = cards.map(c => c.val).sort((a,b) => a-b);
-        // 去重
         vals = [...new Set(vals)]; 
-        
-        // 如果去重后张数 + 鬼牌 < 5，肯定组不成顺子
         if (vals.length + jokerCount < 5) return false;
-
-        // 检查间隔
-        // 尝试每个可能的起始点
-        // 这里只是简单检查：最大值 - 最小值 是否 <= 4 (且没有重复，上面已去重)
-        // 注意：A可以当1也可以当14。这里简化只当14。
-        // 如果要完美支持A-5顺子，需要额外处理。
-        
         let gap = vals[vals.length-1] - vals[0];
         if (gap <= 4) return true;
-        
         return false; 
     }
 
-    // 辅助函数：检查葫芦 (3+2)
     function checkFullHouse(counts, jokers) {
-        // 有两组牌，一组张数+另一组张数+鬼牌 >= 5
         let values = Object.values(counts);
-        if (values.length === 2) return true; // 两堆牌，鬼牌肯定能补
-        if (values.length === 1 && jokers >= 1) return true; // 一堆牌+鬼牌
+        if (values.length === 2) return true;
+        if (values.length === 1 && jokers >= 1) return true;
         return false;
     }
 
     function checkTwoPair(counts, jokers) {
         let pairs = 0;
-        for(let k in counts) {
-            if (counts[k] >= 2) pairs++;
-        }
-        // 现有两对，或者有一对+鬼牌，或者鬼牌>=2
+        for(let k in counts) if (counts[k] >= 2) pairs++;
         if (pairs >= 2) return true;
         if (pairs === 1 && jokers >= 1) return true;
-        if (jokers >= 2) return true; // 理论上这会被三条截胡，但放在判定链后面作为保底
+        if (jokers >= 2) return true;
         return false;
     }
 </script>
