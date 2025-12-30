@@ -4,9 +4,8 @@
     <meta charset="UTF-8">
     <title>Casino Video Poker</title>
     <style>
-        /* === 1. 赌场绿绒布背景 === */
+        /* === 赌场绿绒布背景 === */
         body {
-            /* 使用径向渐变模拟聚光灯效果 */
             background: radial-gradient(circle at center, #358c35 0%, #003300 100%);
             color: white;
             font-family: 'Helvetica Neue', Arial, sans-serif;
@@ -19,15 +18,13 @@
             overflow-x: hidden;
         }
 
-        /* === 2. 黑金风格赔率表 === */
+        /* === 黑金风格赔率表 === */
         .paytable {
             display: grid;
             grid-template-columns: 1fr 1fr;
             gap: 15px;
-            /* 半透明黑色玻璃质感 */
             background: rgba(0, 0, 0, 0.6);
             padding: 20px;
-            /* 金色边框 */
             border: 3px solid #ffd700;
             border-radius: 12px;
             margin-top: 30px;
@@ -43,7 +40,6 @@
             border-bottom: 1px solid rgba(255, 215, 0, 0.2);
             padding-bottom: 2px;
         }
-        /* 中奖高亮：霓虹闪烁效果 */
         .highlight {
             color: #fff;
             background-color: #b8860b;
@@ -57,12 +53,12 @@
             to { box-shadow: 0 0 25px #ffaa00; }
         }
 
-        /* === 3. 牌桌区域 === */
+        /* === 牌桌区域 === */
         .game-area {
             display: flex;
             gap: 15px;
             margin: 50px 0;
-            perspective: 1000px; /* 增加一点透视感 */
+            perspective: 1000px;
         }
 
         .card {
@@ -93,10 +89,10 @@
         .card.black { color: #222; }
         .card.joker { color: #800080; }
 
-        /* === 4. 弃牌样式 (Discard) === */
+        /* === 弃牌样式 === */
         .card.discard {
             transform: translateY(20px) scale(0.95);
-            filter: brightness(0.6) sepia(0.2); /* 变暗并带点复古黄 */
+            filter: brightness(0.6) sepia(0.2);
             border-color: #cc0000;
         }
         .card.discard::after {
@@ -115,7 +111,7 @@
             box-shadow: 0 2px 10px rgba(0,0,0,0.5);
         }
 
-        /* === 5. 赌场氛围控制区 === */
+        /* === 赌场氛围控制区 === */
         .controls {
             text-align: center;
             background: rgba(0,0,0,0.3);
@@ -128,14 +124,13 @@
         .status {
             margin-bottom: 20px;
             font-size: 24px;
-            color: #ffd700; /* 金色字体 */
+            color: #ffd700;
             text-shadow: 2px 2px 2px #000;
             font-family: 'Courier New', Courier, monospace;
             font-weight: bold;
             min-height: 35px;
         }
 
-        /* === 实体按钮设计 === */
         button {
             padding: 15px 50px;
             font-size: 24px;
@@ -145,25 +140,15 @@
             letter-spacing: 2px;
             cursor: pointer;
             border: none;
-            border-radius: 50px; /* 胶囊形状 */
-            
-            /* 3D 红色按钮渐变 */
+            border-radius: 50px;
             background: linear-gradient(to bottom, #ff4d4d 0%, #cc0000 100%);
-            /* 底部阴影模拟厚度 */
-            box-shadow: 
-                0 6px 0 #8b0000, 
-                0 10px 10px rgba(0,0,0,0.3),
-                inset 0 1px 0 rgba(255,255,255,0.4);
-            
+            box-shadow: 0 6px 0 #8b0000, 0 10px 10px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.4);
             transition: all 0.1s;
-            position: relative;
         }
 
         button:active {
-            transform: translateY(6px); /* 按下效果 */
-            box-shadow: 
-                0 0 0 #8b0000, 
-                inset 0 2px 5px rgba(0,0,0,0.5);
+            transform: translateY(6px);
+            box-shadow: 0 0 0 #8b0000, inset 0 2px 5px rgba(0,0,0,0.5);
             background: linear-gradient(to bottom, #cc0000 0%, #aa0000 100%);
         }
 
@@ -183,7 +168,7 @@
             padding: 10px 30px;
             border-radius: 5px;
             font-family: 'Courier New', monospace;
-            color: #0f0; /* 老式电子屏绿色 */
+            color: #0f0;
             font-size: 20px;
             box-shadow: inset 0 0 10px #000;
         }
@@ -201,11 +186,10 @@
         <div id="row-straight"><span>顺子</span><span>x3</span></div>
         <div id="row-three"><span>三条</span><span>x1</span></div>
         <div id="row-twopair"><span>两对</span><span>x1</span></div>
-        <div id="row-pair"><span>一对 (无分)</span><span>x0</span></div>
+        <div id="row-pair"><span>高牌一对 (J/Q/K/A)</span><span>x1</span></div>
     </div>
 
-    <div class="game-area" id="card-container">
-        </div>
+    <div class="game-area" id="card-container"></div>
 
     <div class="controls">
         <div class="status" id="status-text">PRESS DEAL TO START</div>
@@ -215,7 +199,15 @@
     </div>
 
 <script>
-    // === 游戏逻辑 (保持弃牌模式不变) ===
+    // === 音效加载 ===
+    // 确保你的目录下有 win.mp3 和 lose.mp3
+    const winSound = new Audio('win.mp3');
+    const loseSound = new Audio('lose.mp3');
+    
+    // 预加载以防延迟
+    winSound.load();
+    loseSound.load();
+
     const SUITS = ['♠', '♥', '♣', '♦'];
     const RANKS = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A'];
     let deck = [];
@@ -229,13 +221,11 @@
     const statusText = document.getElementById('status-text');
     const moneyDisplay = document.getElementById('money');
 
-    // 初始化空牌位
     for(let i=0; i<5; i++) {
         let div = document.createElement('div');
         div.className = 'card';
         div.onclick = () => toggleDiscard(i);
-        // 初始背面花纹简单模拟
-        div.style.background = `repeating-linear-gradient(45deg, #cc0000, #cc0000 10px, #aa0000 10px, #aa0000 20px)`;
+        div.style.background = 'repeating-linear-gradient(45deg, #cc0000, #cc0000 10px, #aa0000 10px, #aa0000 20px)';
         div.style.border = '2px solid white';
         cardContainer.appendChild(div);
     }
@@ -261,10 +251,15 @@
 
     function handleAction() {
         if (gameState === 'DEAL') {
-            if (money < BET) {
-                statusText.innerText = "INSERT COIN (刷新页面)";
-                return;
+            if (money <= 0) {
+                if(confirm("破产了！要补充 100 筹码继续玩吗？")) {
+                    money = 100;
+                } else {
+                    return;
+                }
             }
+            if (money < BET) return;
+
             money -= BET;
             updateUI();
             
@@ -276,7 +271,7 @@
             
             gameState = 'DRAW';
             actionBtn.innerText = "DRAW";
-            statusText.innerText = "SELECT CARDS TO DISCARD";
+            statusText.innerText = "SELECT DISCARDS";
             clearHighlights();
             renderHand();
         } 
@@ -286,10 +281,8 @@
                     hand[i] = { ...deck.pop(), isDiscard: false };
                 }
             }
-            
             renderHand();
             evaluateHand(); 
-            
             gameState = 'DEAL';
             actionBtn.innerText = "DEAL";
         }
@@ -307,11 +300,8 @@
             const card = hand[i];
             const div = divs[i];
             
-            // 重置样式（覆盖掉初始背面的样式）
-            div.style.background = ''; 
             div.style.background = 'linear-gradient(135deg, #fff 0%, #f0f0f0 100%)';
             div.style.border = '2px solid #ccc';
-
             div.className = `card ${card.isDiscard ? 'discard' : ''}`;
             
             if (card.isJoker) {
@@ -340,12 +330,12 @@
         document.querySelectorAll('.paytable div').forEach(el => el.classList.remove('highlight'));
     }
 
-    // === 简单的结算逻辑 ===
     function evaluateHand() {
         let jokers = hand.filter(c => c.isJoker).length;
         let normalCards = hand.filter(c => !c.isJoker);
         let counts = {};
         let suits = {};
+        
         normalCards.forEach(c => {
             counts[c.val] = (counts[c.val] || 0) + 1;
             suits[c.suit] = (suits[c.suit] || 0) + 1;
@@ -369,6 +359,7 @@
         let msg = "GAME OVER";
         let highlightId = "";
 
+        // === 结算逻辑 ===
         if (isRoyal) { win = 100; msg = "ROYAL FLUSH!!"; highlightId = "row-royal"; }
         else if ((maxCount + jokers) >= 5) { win = 50; msg = "FIVE OF A KIND!"; highlightId = "row-five"; }
         else if (isFlush && isStraight) { win = 20; msg = "STRAIGHT FLUSH"; highlightId = "row-strflush"; }
@@ -378,15 +369,42 @@
         else if (isStraight) { win = 3; msg = "STRAIGHT"; highlightId = "row-straight"; }
         else if ((maxCount + jokers) === 3) { win = 1; msg = "THREE OF A KIND"; highlightId = "row-three"; }
         else if (checkTwoPair(counts, jokers)) { win = 1; msg = "TWO PAIR"; highlightId = "row-twopair"; }
+        
+        // === 高牌一对检测 (Jacks or Better) ===
+        else if (checkHighPair(counts, jokers)) {
+            win = 1; msg = "JACKS OR BETTER"; highlightId = "row-pair";
+        }
 
         if (win > 0) {
             money += win * BET;
             statusText.innerText = `${msg} WIN ${win}!`;
             if(highlightId) document.getElementById(highlightId).classList.add('highlight');
+            
+            // === 播放胜利音效 ===
+            // 重置播放进度，确保连赢时能重新播放
+            winSound.currentTime = 0;
+            winSound.play().catch(e => console.log("音效播放失败:", e));
         } else {
             statusText.innerText = msg;
+            
+            // === 播放失败音效 ===
+            loseSound.currentTime = 0;
+            loseSound.play().catch(e => console.log("音效播放失败:", e));
         }
         updateUI();
+    }
+
+    function checkHighPair(counts, jokers) {
+        // 如果有鬼牌但没成三条以上，说明这手牌很烂，直接判输
+        if (jokers > 0) return false;
+
+        // 检查 J(11), Q(12), K(13), A(14) 的对子
+        for (let val in counts) {
+            if (counts[val] >= 2 && parseInt(val) >= 11) {
+                return true;
+            }
+        }
+        return false;
     }
 
     function checkStraight(cards, jokerCount) {
@@ -410,8 +428,6 @@
         let pairs = 0;
         for(let k in counts) if (counts[k] >= 2) pairs++;
         if (pairs >= 2) return true;
-        if (pairs === 1 && jokers >= 1) return true;
-        if (jokers >= 2) return true;
         return false;
     }
 </script>
