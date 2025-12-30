@@ -276,13 +276,26 @@
             renderHand();
         } 
         else if (gameState === 'DRAW') {
+            // 1. 先正常换牌
             for(let i=0; i<5; i++) {
                 if (hand[i].isDiscard) {
                     hand[i] = { ...deck.pop(), isDiscard: false };
                 }
             }
+            
+            // === 2. 幸运机制介入 (人为提高概率) ===
+            // 设定 5% 的概率 (0.05) 触发“天降顺子”
+            // 只有当玩家没有鬼牌的时候才触发（避免破坏本来可能更好的牌）
+            let hasJoker = hand.some(c => c.isJoker);
+            if (!hasJoker && Math.random() < 0.05) { 
+                console.log("幸运机制触发！强行发顺子！");
+                hand = generateForcedStraight();
+            }
+            
+            // 3. 渲染和结算
             renderHand();
             evaluateHand(); 
+            
             gameState = 'DEAL';
             actionBtn.innerText = "DEAL";
         }
@@ -369,6 +382,43 @@
         else if (isStraight) { win = 3; msg = "STRAIGHT"; highlightId = "row-straight"; }
         else if ((maxCount + jokers) === 3) { win = 1; msg = "THREE OF A KIND"; highlightId = "row-three"; }
         else if (checkTwoPair(counts, jokers)) { win = 1; msg = "TWO PAIR"; highlightId = "row-twopair"; }
+            // === 新增：强制生成一个顺子 ===
+        function generateForcedStraight() {
+            // 随机选择顺子的起始点 (2 到 10)
+            // 2=2 ... 10=10 (注意：我们的val逻辑里 2是val 2, 10是val 10)
+            // 比如随机到 6，那么顺子就是 6,7,8,9,10
+            let startVal = Math.floor(Math.random() * 9) + 2; 
+            let newHand = [];
+            for (let i = 0; i < 5; i++) {
+                let val = startVal + i;
+                // 简单的把 val 转回 rank 字符
+                let rankStr = '';
+                if (val <= 10) rankStr = val.toString();
+                else if (val === 11) rankStr = 'J';
+                else if (val === 12) rankStr = 'Q';
+                else if (val === 13) rankStr = 'K';
+                else if (val === 14) rankStr = 'A';
+    
+                // 随机给个花色，确保不全是同一种（避免变成同花顺，虽然那样玩家更爽）
+                // 简单的技巧：让花色跟着位置变，比如 ♠, ♥, ♣, ♦, ♠ 
+                let suit = SUITS[i % 4]; 
+    
+                newHand.push({
+                    suit: suit,
+                    rank: rankStr,
+                    val: val,
+                    isJoker: false,
+                    isDiscard: false
+                }); 
+            }
+            // 20% 的几率把其中一张换成鬼牌，增加真实感
+            if (Math.random() < 0.2) {
+                let replaceIdx = Math.floor(Math.random() * 5);
+                newHand[replaceIdx] = { suit: 'JOKER', rank: 'JOKER', val: 99, isJoker: true, isDiscard: false };
+            }
+
+            return newHand;
+        }
         
         // === 高牌一对检测 (Jacks or Better) ===
         else if (checkHighPair(counts, jokers)) {
